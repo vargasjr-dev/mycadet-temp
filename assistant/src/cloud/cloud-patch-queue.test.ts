@@ -9,6 +9,8 @@ import {
   test,
 } from "bun:test";
 
+import { z } from "zod";
+
 let mockClient: {
   baseUrl: string;
   cloudAssistantId: string;
@@ -37,7 +39,7 @@ function makeClient(assistantId = "asst-1", baseUrl = "https://platform.a") {
     baseUrl,
     cloudAssistantId: assistantId,
     fetch: async (path: string, init: RequestInit) => {
-      patches.push({ path, body: JSON.parse(init.body as string) });
+      patches.push({ path, body: JSON.parse(z.string().parse(init.body)) });
       return respond();
     },
   };

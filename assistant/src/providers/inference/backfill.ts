@@ -16,12 +16,12 @@
  * `getProvider(name)`, so existing configs need an explicit field on the
  * default profile and on any legacy bare-`provider` callsite override.
  */
-
 import { getIsCloud } from "../../config/env-registry.js";
 import { loadRawConfig, saveRawConfig } from "../../config/loader.js";
 import type { DrizzleDb } from "../../persistence/db-connection.js";
 import { credentialKey } from "../../security/credential-key.js";
 import { getLogger } from "../../util/logger.js";
+import { isObjectRecord } from "../../util/object.js";
 import { CLOUD_ROUTABLE_PROVIDERS } from "../cadet-model-routing.js";
 import { CADET_CLOUD_CONNECTION_NAME } from "../cadet-model-routing.js";
 import { isConnectionCompatibleWithModel } from "../connection-model-compat.js";
@@ -79,8 +79,8 @@ function backfillConfigProfiles(db: DrizzleDb): void {
   let changed = false;
 
   // 1. The default profile — every dispatch path's terminal fallback.
-  const defaultProfile = llm.default as Record<string, unknown> | undefined;
-  if (defaultProfile && typeof defaultProfile === "object") {
+  const defaultProfile = llm.default;
+  if (isObjectRecord(defaultProfile)) {
     if (
       ensureProviderConnection(defaultProfile, "<llm.default>", db, globalMode)
     ) {
@@ -90,11 +90,11 @@ function backfillConfigProfiles(db: DrizzleDb): void {
   }
 
   // 2. Named alternate profiles.
-  const profiles = llm.profiles as Record<string, unknown> | undefined;
-  if (profiles && typeof profiles === "object") {
+  const profiles = llm.profiles;
+  if (isObjectRecord(profiles)) {
     for (const [profileName, profileVal] of Object.entries(profiles)) {
-      const profile = profileVal as Record<string, unknown>;
-      if (!profile || typeof profile !== "object") {
+      const profile = profileVal;
+      if (!isObjectRecord(profile)) {
         continue;
       }
       if (ensureProviderConnection(profile, profileName, db, globalMode)) {
@@ -110,11 +110,11 @@ function backfillConfigProfiles(db: DrizzleDb): void {
   // 3. Per-call-site overrides. Only legacy entries with a bare `provider`
   //    field need backfill — entries that just point at a `profile` already
   //    inherit `provider_connection` from there.
-  const callSites = llm.callSites as Record<string, unknown> | undefined;
-  if (callSites && typeof callSites === "object") {
+  const callSites = llm.callSites;
+  if (isObjectRecord(callSites)) {
     for (const [callSiteName, callSiteVal] of Object.entries(callSites)) {
-      const callSite = callSiteVal as Record<string, unknown>;
-      if (!callSite || typeof callSite !== "object") {
+      const callSite = callSiteVal;
+      if (!isObjectRecord(callSite)) {
         continue;
       }
       // Only touch overrides that explicitly set `provider` — the typical

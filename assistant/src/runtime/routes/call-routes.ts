@@ -77,16 +77,14 @@ async function handleStartCall({ body }: RouteHandlerArgs) {
     );
   }
 
-  if (!body?.conversationId) {
+  if (typeof body?.conversationId !== "string" || !body.conversationId) {
     throw new BadRequestError("conversationId is required");
   }
 
-  if (
-    body.callerIdentityMode != null &&
-    !(VALID_CALLER_IDENTITY_MODES as readonly string[]).includes(
-      body.callerIdentityMode as string,
-    )
-  ) {
+  const callerIdentityMode = VALID_CALLER_IDENTITY_MODES.find(
+    (mode) => mode === body.callerIdentityMode,
+  );
+  if (body.callerIdentityMode != null && callerIdentityMode === undefined) {
     throw new BadRequestError(
       `Invalid callerIdentityMode: "${
         body.callerIdentityMode
@@ -113,12 +111,9 @@ async function handleStartCall({ body }: RouteHandlerArgs) {
       "",
     task: (typeof body.task === "string" ? body.task : undefined) ?? "",
     context: typeof body.context === "string" ? body.context : undefined,
-    conversationId: body.conversationId as string,
+    conversationId: body.conversationId,
     assistantId: DAEMON_INTERNAL_ASSISTANT_ID,
-    callerIdentityMode: body.callerIdentityMode as
-      | "assistant_number"
-      | "user_number"
-      | undefined,
+    callerIdentityMode,
   });
 
   if (!result.ok) {

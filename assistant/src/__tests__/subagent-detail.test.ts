@@ -4,8 +4,9 @@
  * getSubagentDetail route handler's server-side resolution of the subagent's
  * own conversation id.
  */
-
 import { describe, expect, mock, test } from "bun:test";
+
+import { z } from "zod";
 
 // ---------------------------------------------------------------------------
 // Mocks: must be registered before importing the module under test
@@ -250,10 +251,27 @@ interface DetailResponse {
 }
 
 function fetchDetail(id: string, conversationId?: string): DetailResponse {
-  return detailRoute.handler({
-    pathParams: { id },
-    queryParams: conversationId ? { conversationId } : {},
-  }) as DetailResponse;
+  return z
+    .looseObject({
+      events: z.array(z.looseObject({ type: z.string(), content: z.string() })),
+      usage: z
+        .looseObject({
+          inputTokens: z.number(),
+          outputTokens: z.number(),
+          estimatedCost: z.number(),
+        })
+        .optional(),
+      status: z.string().optional(),
+      label: z.string().optional(),
+      conversationId: z.string().optional(),
+      parentToolUseId: z.string().optional(),
+    })
+    .parse(
+      detailRoute.handler({
+        pathParams: { id },
+        queryParams: conversationId ? { conversationId } : {},
+      }),
+    );
 }
 
 function seedConversation(conversationId: string, text: string): void {

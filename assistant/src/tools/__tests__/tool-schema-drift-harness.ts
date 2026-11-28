@@ -1,5 +1,9 @@
 import { expect } from "bun:test";
 
+import { z } from "zod";
+
+import { isPlainObject } from "../../util/object.js";
+
 /**
  * Shared assertion harness for the per-skill TOOLS.json ↔ runtime Zod schema
  * drift guards (`schedule-tool-input-schemas.test.ts`,
@@ -30,6 +34,12 @@ import { expect } from "bun:test";
 
 export type JsonSchema = Record<string, unknown>;
 
+const schemaRecord = z.record(z.string(), z.unknown());
+
+export const toolManifestSchema = z.object({
+  tools: z.array(z.object({ name: z.string(), input_schema: schemaRecord })),
+});
+
 export interface DriftCase {
   /** Tool name, matched against the TOOLS.json `tools[].name`. */
   name: string;
@@ -46,11 +56,11 @@ function structural(node: unknown): unknown {
   if (Array.isArray(node)) {
     return node.map(structural);
   }
-  if (node === null || typeof node !== "object") {
+  if (!isPlainObject(node)) {
     return node;
   }
   const out: JsonSchema = {};
-  for (const [key, value] of Object.entries(node as JsonSchema)) {
+  for (const [key, value] of Object.entries(node)) {
     if (key === "description") {
       continue;
     }
@@ -89,10 +99,10 @@ function canonicalize(prop: JsonSchema, stripNull: boolean): JsonSchema {
   const anyOf = out.anyOf;
   if (Array.isArray(anyOf) && anyOf.length === 2) {
     const nullIdx = anyOf.findIndex(
-      (entry) => (entry as JsonSchema).type === "null",
+      (entry: unknown) => isPlainObject(entry) && entry.type === "null",
     );
     if (nullIdx !== -1) {
-      const base = canonicalize(anyOf[1 - nullIdx] as JsonSchema, false);
+      const base = canonicalize(schemaRecord.parse(anyOf[1 - nullIdx]), false);
       delete out.anyOf;
       Object.assign(out, base);
       if (!stripNull && typeof base.type === "string") {
@@ -113,11 +123,13 @@ export function expectNoSchemaDrift(
 ): void {
   const entry = toolsJson.tools.find((t) => t.name === c.name);
   expect(entry).toBeDefined();
-  const advertised = structural(entry!.input_schema) as JsonSchema;
-  const derived = structural(c.derived) as JsonSchema;
+  const advertised = schemaRecord.parse(structural(entry!.input_schema));
+  const derived = schemaRecord.parse(structural(c.derived));
 
-  const advertisedProps = { ...(advertised.properties as JsonSchema) };
-  const derivedProps = { ...(derived.properties as JsonSchema) };
+  const advertisedProps = {
+    ...schemaRecord.optional().parse(advertised.properties),
+  };
+  const derivedProps = { ...schemaRecord.optional().parse(derived.properties) };
 
   for (const field of Object.keys(c.passthrough ?? {})) {
     expect(advertisedProps[field]).toBeDefined();
@@ -127,7 +139,7 @@ export function expectNoSchemaDrift(
 
   for (const [field, prop] of Object.entries(derivedProps)) {
     derivedProps[field] = canonicalize(
-      prop as JsonSchema,
+      schemaRecord.parse(prop),
       c.nullableAtRuntime?.includes(field) ?? false,
     );
   }
@@ -137,6 +149,10 @@ export function expectNoSchemaDrift(
   );
   expect(derivedProps).toEqual(advertisedProps);
   expect(
-    [...((derived.required as string[] | undefined) ?? [])].sort(),
-  ).toEqual([...((advertised.required as string[] | undefined) ?? [])].sort());
+    [...(z.array(z.string()).optional().parse(derived.required) ?? [])].sort(),
+  ).toEqual(
+    [
+      ...(z.array(z.string()).optional().parse(advertised.required) ?? []),
+    ].sort(),
+  );
 }

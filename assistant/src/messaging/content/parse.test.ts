@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
-import type { Code, Paragraph } from "mdast";
+import type { Paragraph } from "mdast";
+import { z } from "zod";
 
 import { parseMarkdown } from "./parse.js";
 
@@ -18,7 +19,12 @@ describe("parseMarkdown", () => {
 
   test("parses fenced code with its language", () => {
     const tree = parseMarkdown("```ts\nconst x = 1;\n```");
-    const code = tree.children[0] as Code;
+    const code = z
+      .looseObject({
+        type: z.literal("code"),
+        lang: z.union([z.null(), z.string()]).optional(),
+      })
+      .parse(tree.children[0]);
     expect(code.type).toBe("code");
     expect(code.lang).toBe("ts");
   });

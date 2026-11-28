@@ -21,6 +21,7 @@ import { Command } from "commander";
 import { z } from "zod";
 
 import { jsonObjectSchema } from "../../../__tests__/helpers/json-object-schema.js";
+import { requireObjectRecord } from "../../../__tests__/helpers/require-object-record.js";
 
 // ---------------------------------------------------------------------------
 // Mock state
@@ -214,8 +215,7 @@ describe("conversations import — valid input", () => {
       .parse(
         z
           .record(z.string(), z.unknown())
-          .parse((lastIpcCall!.params as Record<string, unknown>).body)
-          .conversations,
+          .parse(requireObjectRecord(lastIpcCall!.params).body).conversations,
       );
     expect(convs[0]!.sourceKey).toBe("chatgpt:abc123");
     expect(convs[0]!.title).toBe("Exported Chat");

@@ -12,7 +12,7 @@ import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 import { z } from "zod";
 
 import { RecallMetadataSchema } from "../api/events/tool-result.js";
-import type { AssistantConfig } from "../config/schema.js";
+import { AssistantConfigSchema } from "../config/schema.js";
 import type { Provider, ProviderResponse } from "../providers/types.js";
 import { jsonObjectSchema } from "./helpers/json-object-schema.js";
 
@@ -70,7 +70,7 @@ function makeContext(
   return {
     workingDir,
     conversationId: "conv-xyz",
-    config: {} as AssistantConfig,
+    config: AssistantConfigSchema.parse({}),
     ...(signal ? { signal } : {}),
   };
 }

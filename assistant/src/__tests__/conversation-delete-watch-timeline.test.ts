@@ -12,6 +12,8 @@
  */
 import { beforeAll, describe, expect, mock, spyOn, test } from "bun:test";
 
+import { z } from "zod";
+
 // Keep the rest of the module real; only the Qdrant collection drop is
 // replaced, so `clearAll` does not reach for a lexical index that is not
 // running here.
@@ -205,7 +207,9 @@ describe("an append that lands inside a clear-all", () => {
     await clearAll();
 
     // The row really did land, so the wipe had something to sweep.
-    const result = landed as WatchAppendResult | null;
+    const result = z
+      .looseObject({ ok: z.boolean().optional(), entryId: z.string() })
+      .parse(landed);
     expect(result?.ok).toBe(true);
     expect(renderWatchTimeline(watched.sessionId).totalEntries).toBe(0);
     expect(

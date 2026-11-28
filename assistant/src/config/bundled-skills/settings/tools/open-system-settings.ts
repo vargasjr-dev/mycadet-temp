@@ -28,7 +28,11 @@ type PaneName = keyof typeof PANES;
 type SettingsPlatform = keyof (typeof PANES)[PaneName]["urls"];
 
 const VALID_PLATFORMS: SettingsPlatform[] = ["macos", "windows"];
-const VALID_PANES = Object.keys(PANES) as PaneName[];
+const VALID_PANES = Object.keys(PANES);
+
+function isPaneName(value: unknown): value is PaneName {
+  return typeof value === "string" && Object.hasOwn(PANES, value);
+}
 
 export async function run(
   input: Record<string, unknown>,
@@ -36,10 +40,10 @@ export async function run(
 ): Promise<ToolExecutionResult> {
   const requestedPlatform =
     typeof input.platform === "string" ? input.platform : undefined;
-  if (
-    requestedPlatform !== undefined &&
-    !VALID_PLATFORMS.includes(requestedPlatform as SettingsPlatform)
-  ) {
+  const selectedPlatform = VALID_PLATFORMS.find(
+    (platform) => platform === requestedPlatform,
+  );
+  if (requestedPlatform !== undefined && selectedPlatform === undefined) {
     return {
       content: `Error: unknown platform "${requestedPlatform}". Valid platforms: ${VALID_PLATFORMS.join(
         ", ",
@@ -48,8 +52,8 @@ export async function run(
     };
   }
 
-  const pane = input.pane as string;
-  if (!VALID_PANES.includes(pane as PaneName)) {
+  const pane = input.pane;
+  if (!isPaneName(pane)) {
     return {
       content: `Error: unknown pane "${pane}". Valid panes: ${VALID_PANES.join(
         ", ",
@@ -58,10 +62,8 @@ export async function run(
     };
   }
 
-  const platform =
-    (requestedPlatform as SettingsPlatform | undefined) ??
-    (isWindows() ? "windows" : "macos");
-  const meta = PANES[pane as PaneName];
+  const platform = selectedPlatform ?? (isWindows() ? "windows" : "macos");
+  const meta = PANES[pane];
 
   throwIfCancelled(context);
 

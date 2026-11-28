@@ -1,3 +1,4 @@
+import { z } from "zod";
 /**
  * Behavioral parity tests for the email CLI commands.
  *
@@ -87,7 +88,7 @@ test("register calls correct platform URL with username", async () => {
   expect(captured).not.toBeNull();
   expect(captured!.path).toContain("/email-addresses/");
   expect(captured!.init?.method).toBe("POST");
-  expect(JSON.parse(captured!.init?.body as string)).toEqual({
+  expect(JSON.parse(z.string().parse(captured!.init?.body))).toEqual({
     username: "mybot",
   });
   expect(process.exitCode).toBe(0);
@@ -378,7 +379,7 @@ test("send --attach reads the file and forwards base64 attachments to the cloud"
       );
     }
     // send endpoint — capture the forwarded payload
-    sendBody = JSON.parse(init?.body as string);
+    sendBody = JSON.parse(z.string().parse(init?.body));
     return new Response(
       JSON.stringify({ delivery_id: "del_attach", status: "accepted" }),
       { status: 200 },

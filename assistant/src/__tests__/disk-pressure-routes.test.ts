@@ -108,9 +108,29 @@ async function callRoute(
   method: string,
   body?: Record<string, unknown>,
 ): Promise<DiskPressureRouteResult> {
-  return (await getRoute(endpoint, method).handler({
-    body,
-  })) as DiskPressureRouteResult;
+  return z
+    .looseObject({
+      status: z.looseObject({
+        enabled: z.boolean(),
+        state: z.string(),
+        locked: z.boolean(),
+        acknowledged: z.boolean(),
+        overrideActive: z.boolean(),
+        effectivelyLocked: z.boolean(),
+        lockId: z.union([z.null(), z.string()]),
+        usagePercent: z.union([z.null(), z.number()]),
+        thresholdPercent: z.number(),
+        path: z.union([z.null(), z.string()]),
+        lastCheckedAt: z.union([z.null(), z.string()]),
+        blockedCapabilities: z.array(z.string()),
+        error: z.union([z.null(), z.string()]),
+      }),
+    })
+    .parse(
+      await getRoute(endpoint, method).handler({
+        body,
+      }),
+    );
 }
 
 function expectRouteError(
@@ -342,7 +362,25 @@ describe("disk pressure routes", () => {
 
     const statuses = events.map(
       (message) =>
-        (message as { status: DiskPressureRouteResult["status"] }).status,
+        z
+          .looseObject({
+            status: z.looseObject({
+              enabled: z.boolean(),
+              state: z.string(),
+              locked: z.boolean(),
+              acknowledged: z.boolean(),
+              overrideActive: z.boolean(),
+              effectivelyLocked: z.boolean(),
+              lockId: z.union([z.null(), z.string()]),
+              usagePercent: z.union([z.null(), z.number()]),
+              thresholdPercent: z.number(),
+              path: z.union([z.null(), z.string()]),
+              lastCheckedAt: z.union([z.null(), z.string()]),
+              blockedCapabilities: z.array(z.string()),
+              error: z.union([z.null(), z.string()]),
+            }),
+          })
+          .parse(message).status,
     );
     expect(statuses.map((status) => status.state)).toEqual([
       "critical",

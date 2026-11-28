@@ -2,6 +2,8 @@ import { randomUUID } from "node:crypto";
 import type { SQLQueryBindings } from "bun:sqlite";
 import { describe, expect, test } from "bun:test";
 
+import { z } from "zod";
+
 import {
   createConversation,
   deleteConversation,
@@ -221,7 +223,9 @@ describe("watch timeline", () => {
 
     const frame = readWatchScreenshot(entryId);
     expect(frame?.mimeType).toBe(WATCH_SCREENSHOT_MIME);
-    expect(Buffer.from(frame?.bytes as Buffer)).toEqual(SCREENSHOT_BYTES);
+    expect(Buffer.from(z.instanceof(Buffer).parse(frame?.bytes))).toEqual(
+      SCREENSHOT_BYTES,
+    );
   });
 
   test("has no frame to hand back for an entry that carries none", () => {

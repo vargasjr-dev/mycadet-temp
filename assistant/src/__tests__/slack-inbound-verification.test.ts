@@ -11,6 +11,7 @@
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
 import { jsonObjectSchema } from "./helpers/json-object-schema.js";
+import { requireObjectRecord } from "./helpers/require-object-record.js";
 
 // ---------------------------------------------------------------------------
 // Test isolation: in-memory SQLite via temp directory
@@ -196,9 +197,9 @@ describe("Slack inbound trusted contact verification", () => {
 
     // Channel reply tells user they're not recognized yet
     expect(deliverReplyCalls.length).toBe(1);
-    expect(
-      (deliverReplyCalls[0].payload as Record<string, unknown>).text,
-    ).toContain("I don't recognize you yet");
+    expect(requireObjectRecord(deliverReplyCalls[0].payload).text).toContain(
+      "I don't recognize you yet",
+    );
   });
 
   test("a blocked (revoked) Slack contact gets no challenge and no guardian re-prompt", async () => {

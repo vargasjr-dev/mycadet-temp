@@ -21,6 +21,7 @@ import {
 import { drizzle } from "drizzle-orm/bun-sqlite";
 import { z } from "zod";
 
+import { getObjectProperty } from "../util/object.js";
 import { jsonObjectSchema } from "./helpers/json-object-schema.js";
 
 // ---------------------------------------------------------------------------
@@ -107,7 +108,7 @@ function applyHatchProviderSelection(options: {
     ...jsonObjectSchema.parse(raw.llm ?? {}),
   };
   const hadDefaultProviderBefore =
-    (llm.default as Record<string, unknown> | undefined)?.provider != null;
+    getObjectProperty(llm.default, "provider") != null;
   if (options.profiles !== undefined) {
     llm.profiles = options.profiles;
   }

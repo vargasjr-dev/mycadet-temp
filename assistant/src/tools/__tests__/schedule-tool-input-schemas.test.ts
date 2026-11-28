@@ -9,7 +9,10 @@ import { scheduleDeleteInputSchema } from "../schedule/delete.js";
 import { scheduleListInputSchema } from "../schedule/list.js";
 import { scheduleUpdateInputSchema } from "../schedule/update.js";
 import { toToolInputSchema } from "../shared/zod-tool-schema.js";
-import { expectNoSchemaDrift } from "./tool-schema-drift-harness.js";
+import {
+  expectNoSchemaDrift,
+  toolManifestSchema,
+} from "./tool-schema-drift-harness.js";
 
 /**
  * Drift guard between the schedule skill's hand-written `TOOLS.json`
@@ -18,12 +21,14 @@ import { expectNoSchemaDrift } from "./tool-schema-drift-harness.js";
  * is not) compared.
  */
 
-const TOOLS_JSON = JSON.parse(
-  readFileSync(
-    join(import.meta.dir, "../../config/bundled-skills/schedule/TOOLS.json"),
-    "utf8",
+const TOOLS_JSON = toolManifestSchema.parse(
+  JSON.parse(
+    readFileSync(
+      join(import.meta.dir, "../../config/bundled-skills/schedule/TOOLS.json"),
+      "utf8",
+    ),
   ),
-) as Parameters<typeof expectNoSchemaDrift>[1];
+);
 
 const CASES: {
   name: string;

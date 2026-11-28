@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
+import { z } from "zod";
+
 import { jsonObjectSchema } from "../../__tests__/helpers/json-object-schema.js";
 
 // persistWakeTriggerMessage syncs each row to the disk view and publishes a
@@ -57,7 +59,7 @@ function readMetadata(conversationId: string): Record<string, unknown> {
   expect(rows.length).toBe(1);
   const raw = rows[0]?.metadata;
   expect(raw).toBeTruthy();
-  return jsonObjectSchema.parse(JSON.parse(raw as string));
+  return jsonObjectSchema.parse(JSON.parse(z.string().parse(raw)));
 }
 
 describe("persistWakeTriggerMessage backgroundToolCompletion", () => {

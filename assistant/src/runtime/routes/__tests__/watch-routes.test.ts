@@ -1,5 +1,7 @@
 import { afterEach, describe, expect, test } from "bun:test";
 
+import { z } from "zod";
+
 import { initializeDb } from "../../../persistence/db-init.js";
 import type {
   StreamingTranscriber,
@@ -30,7 +32,32 @@ class FakeSocket implements WatchStreamSocket {
   closeReason: string | null = null;
 
   send(data: string): void {
-    this.frames.push(JSON.parse(data) as WatchStreamServerFrame);
+    this.frames.push(
+      z
+        .union([
+          z.looseObject({
+            type: z.literal("ready"),
+            sessionId: z.string(),
+            conversationId: z.string(),
+          }),
+          z.looseObject({ type: z.literal("entry") }),
+          z.looseObject({ type: z.literal("observation") }),
+          z.looseObject({
+            type: z.literal("error"),
+            category: z.union([
+              z.literal("timeout"),
+              z.literal("auth"),
+              z.literal("rate-limit"),
+              z.literal("invalid-audio"),
+              z.literal("provider-error"),
+              z.literal("session-error"),
+            ]),
+            message: z.string(),
+          }),
+          z.looseObject({ type: z.literal("closed") }),
+        ])
+        .parse(JSON.parse(data)),
+    );
   }
 
   close(code?: number, reason?: string): void {

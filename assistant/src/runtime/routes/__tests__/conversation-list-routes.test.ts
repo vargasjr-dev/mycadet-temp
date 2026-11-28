@@ -1109,7 +1109,27 @@ describe("GET /v1/conversations/sections", () => {
   }
 
   function invokeSections(): SectionRow[] {
-    return (sectionsHandler({}) as { sections: SectionRow[] }).sections;
+    return z
+      .looseObject({
+        sections: z.array(
+          z.looseObject({
+            kind: z.union([
+              z.literal("group"),
+              z.literal("channel"),
+              z.literal("pinned"),
+              z.literal("chats"),
+            ]),
+            groupId: z.string().optional(),
+            name: z.string().optional(),
+            icon: z.union([z.null(), z.string()]).optional(),
+            sortPosition: z.number().optional(),
+            channelId: z.string().optional(),
+            total: z.number(),
+            unread: z.number(),
+          }),
+        ),
+      })
+      .parse(sectionsHandler({})).sections;
   }
 
   function fileIntoGroup(conversationId: string, groupId: string): void {

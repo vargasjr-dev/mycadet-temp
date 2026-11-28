@@ -2,6 +2,7 @@ import { Database } from "bun:sqlite";
 import { describe, expect, test } from "bun:test";
 
 import { drizzle } from "drizzle-orm/bun-sqlite";
+import { z } from "zod";
 
 import { getSqliteFrom } from "../../db-connection.js";
 import * as schema from "../../schema/index.js";
@@ -76,7 +77,9 @@ describe("migration 368: watch timeline screenshot blob", () => {
       .all();
 
     expect(rows.map((row) => row.bytes)).toEqual([frame.length, null]);
-    expect(Buffer.from(rows[0]?.screenshot as Uint8Array)).toEqual(frame);
+    expect(
+      Buffer.from(z.instanceof(Uint8Array).parse(rows[0]?.screenshot)),
+    ).toEqual(frame);
   });
 
   test("is idempotent and preserves existing rows", () => {

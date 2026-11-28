@@ -88,10 +88,12 @@ export function registerWatchersCommand(program: Command): void {
 
           // When --id is provided, the result is a detail object
           if (opts.id) {
-            const detail = result.result as {
-              watcher: WatcherRecord;
-              events: WatcherEvent[];
-            };
+            const detail = result.result;
+            if (!detail || Array.isArray(detail)) {
+              log.error("Unexpected watcher detail response.");
+              process.exitCode = 1;
+              return;
+            }
             const w = detail.watcher;
             log.info(`Watcher: ${w.name} (${w.id})`);
             log.info(`  Provider:      ${w.providerId}`);
@@ -113,7 +115,12 @@ export function registerWatchersCommand(program: Command): void {
           }
 
           // List mode: array of watchers
-          const list = result.result as WatcherRecord[];
+          const list = result.result;
+          if (!Array.isArray(list)) {
+            log.error("Unexpected watcher list response.");
+            process.exitCode = 1;
+            return;
+          }
           if (list.length === 0) {
             log.info("No watchers found.");
             return;

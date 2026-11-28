@@ -7,6 +7,7 @@
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
 import type { TunnelRecord } from "@mycadet/service-contracts/ingress";
+import { z } from "zod";
 
 import { jsonObjectSchema } from "../../../__tests__/helpers/json-object-schema.js";
 import type { TunnelProbeResult } from "../../../inbound/tunnel-probe.js";
@@ -168,7 +169,9 @@ describe("integrations_ingress_status route", () => {
 
     expect(result.state).toBe("healthy");
     expect(result.publicBaseUrl).toBe(TUNNEL_URL);
-    expect(new Date(result.checkedAt as string).getTime()).not.toBeNaN();
+    expect(
+      new Date(z.string().parse(result.checkedAt)).getTime(),
+    ).not.toBeNaN();
     expect(probeTunnelMock).toHaveBeenCalledWith({
       publicBaseUrl: TUNNEL_URL,
       expectedAssistantId: "assistant-1",

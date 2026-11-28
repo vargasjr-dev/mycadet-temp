@@ -12,7 +12,10 @@ import { subagentSpawnInputSchema } from "../subagent/spawn.js";
 import { subagentStatusInputSchema } from "../subagent/status.js";
 import { manageWorkflowsInputSchema } from "../workflows/manage-workflows.js";
 import { runWorkflowInputSchema } from "../workflows/run-workflow.js";
-import { expectNoSchemaDrift } from "./tool-schema-drift-harness.js";
+import {
+  expectNoSchemaDrift,
+  toolManifestSchema,
+} from "./tool-schema-drift-harness.js";
 
 /**
  * Drift guard between the subagent and workflows skills' hand-written
@@ -24,12 +27,17 @@ import { expectNoSchemaDrift } from "./tool-schema-drift-harness.js";
 function loadToolsJson(
   skill: string,
 ): Parameters<typeof expectNoSchemaDrift>[1] {
-  return JSON.parse(
-    readFileSync(
-      join(import.meta.dir, `../../config/bundled-skills/${skill}/TOOLS.json`),
-      "utf8",
+  return toolManifestSchema.parse(
+    JSON.parse(
+      readFileSync(
+        join(
+          import.meta.dir,
+          `../../config/bundled-skills/${skill}/TOOLS.json`,
+        ),
+        "utf8",
+      ),
     ),
-  ) as Parameters<typeof expectNoSchemaDrift>[1];
+  );
 }
 
 const CASES: {

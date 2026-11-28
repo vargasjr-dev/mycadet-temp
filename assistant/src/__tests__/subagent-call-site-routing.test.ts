@@ -17,6 +17,8 @@
  */
 import { afterAll, describe, expect, mock, test } from "bun:test";
 
+import { z } from "zod";
+
 import type { AssistantEvent } from "../api/index.js";
 import { getProvider as getProviderImport } from "../providers/registry.js";
 import { setConfig } from "./helpers/set-config.js";
@@ -280,7 +282,7 @@ describe("SubagentManager — provider call-site routing", () => {
     // itself is exercised in the next describe block with a fully-stubbed
     // provider pair.
     expect(capturedProvider).toBeInstanceOf(CallSiteRoutingProvider);
-    const wrapper = capturedProvider as CallSiteRoutingProvider;
+    const wrapper = z.looseObject({ name: z.string() }).parse(capturedProvider);
     expect(wrapper.name).toBe("anthropic");
   });
 

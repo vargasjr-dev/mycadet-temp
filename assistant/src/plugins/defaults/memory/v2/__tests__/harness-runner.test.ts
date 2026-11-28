@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { AssistantConfig } from "../../../../../config/schema.js";
+import { AssistantConfigSchema } from "../../../../../config/schema.js";
 import type { OracleTurn } from "../harness/oracle.js";
 import type { ReconstructedInput } from "../harness/replay-input.js";
 import type {
@@ -42,7 +42,7 @@ const STUB_INPUT: RetrievalInput = {
   recentTurnPairs: [{ assistantMessage: "", userMessage: "hi" }],
   nowText: "",
   priorEverInjected: [],
-  config: {} as unknown as AssistantConfig,
+  config: AssistantConfigSchema.parse({}),
 };
 
 const STUB_RECONSTRUCTED: ReconstructedInput = {

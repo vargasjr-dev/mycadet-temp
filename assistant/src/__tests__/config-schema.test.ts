@@ -2655,7 +2655,9 @@ describe("Call entrypoint gating", () => {
       throw new Error("Expected handler to throw");
     } catch (err) {
       expect(err).toBeInstanceOf(RouteError);
-      const routeErr = err as InstanceType<typeof RouteError>;
+      const routeErr = z
+        .looseObject({ statusCode: z.number(), message: z.string() })
+        .parse(err);
       expect(routeErr.statusCode).toBe(403);
       expect(routeErr.message).toContain("disabled");
     }
